@@ -29,6 +29,7 @@ poetry install
 poetry run python test_gpt.py
 ```
 
-# Limitations
+## Limitations
 
-TLDR: This is extremely simplified in many ways.
+- TLDR: This is extremely simplified in many ways.
+- This was made very quickly w Claude.

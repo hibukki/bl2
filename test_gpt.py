@@ -45,15 +45,17 @@ def start_servers() -> tuple[subprocess.Popen, subprocess.Popen, str, str]:
     # Find free port
     gpt0_port = find_free_port()
     
+    gpt0_response_delay = 0.01
+
     # Start GPT0 server with 0.01s delay
     gpt0_server = subprocess.Popen(
-        [sys.executable, "main.py", "--gpt0", "--port", str(gpt0_port), "--response-delay", "0.01"],
+        [sys.executable, "main.py", "--gpt0", "--port", str(gpt0_port), "--response-delay", str(gpt0_response_delay)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
     
     gpt0_url = f"http://localhost:{gpt0_port}"
-    print(f"GPT0 server configured with 0.01s response delay")
+    print(f"GPT0 server configured with {gpt0_response_delay}s response delay")
     
     # Start limited server using the common function
     limited_server, limited_url = start_limited_server(gpt0_url)
@@ -84,10 +86,10 @@ def test_basic(gpt0_url: str, limited_url: str):
 def make_requests(url: str, n: int) -> float:
     """Make n requests to url and return total duration"""
     start = time.time()
-    for _ in range(n):
+    for i in range(n):
         r = requests.get(url)
         if r.status_code != 200:
-            raise Exception(f"Request failed with status {r.status_code}: {r.text} (after {_+1} requests)")
+            raise Exception(f"Request failed with status {r.status_code}: {r.text} (after {i+1} requests)")
     return time.time() - start
 
 def test_performance(gpt0_url: str, limited_url: str):
@@ -110,10 +112,9 @@ def test_performance(gpt0_url: str, limited_url: str):
 def test_bandwidth_limit(limited_url: str):
     """Test that bandwidth limit is enforced"""
     print("\nTesting bandwidth limit...")
-    responses = []
     count = 0
-    
-    while count < 1000:  # Safety limit to prevent infinite loop
+    MAX_REQUESTS = 1000
+    while count < MAX_REQUESTS:  # Safety limit to prevent infinite loop
         r = requests.get(f"{limited_url}/limited-gpt0")
         count += 1
         
@@ -124,8 +125,7 @@ def test_bandwidth_limit(limited_url: str):
             print(f"Unexpected status code: {r.status_code}")
             return False
             
-    print("Warning: Made 1000 requests without hitting bandwidth limit")
-    return False
+    assert False, f"Made {MAX_REQUESTS} requests without hitting bandwidth limit"
 
 def restart_limited_server(limited_server: subprocess.Popen, gpt0_url: str) -> tuple[subprocess.Popen, str]:
     """Restart the limited server to reset bandwidth limit"""

@@ -31,14 +31,15 @@ def limited_gpt0(settings: GPT0LimitedSettings = Depends(get_settings)):
     try:
         response = requests.get(f"{settings.base_url}/gpt0")
         response.raise_for_status()
-        stub_response = response.text
+        gpt0_completion = response.text
     except requests.RequestException as e:
         raise HTTPException(status_code=503, detail=f"Failed to fetch from GPT0: {str(e)}")
 
-    response_size_bytes = len(stub_response.encode('utf-8'))
-    if settings.remaining_bandwidth_bytes - response_size_bytes < 0:
-        raise HTTPException(status_code=429, detail="Bandwidth limit exceeded")
+    gpt0_completion_utf8 = gpt0_completion.encode('utf-8')
+    response_size_bytes = len(gpt0_completion_utf8)
 
-    # Update remaining bandwidth
     settings.remaining_bandwidth_bytes -= response_size_bytes
-    return Response(content=stub_response) 
+    if settings.remaining_bandwidth_bytes < 0:
+        raise HTTPException(status_code=429, detail="Bandwidth limit exceeded")
+    
+    return Response(content=gpt0_completion_utf8) 
