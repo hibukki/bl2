@@ -36,9 +36,13 @@ def limited_gpt0(settings: GPT0LimitedSettings = Depends(get_settings)):
         raise HTTPException(status_code=503, detail=f"Failed to fetch from GPT0: {str(e)}")
 
     gpt0_completion_utf8 = gpt0_completion.encode('utf-8')
+    
     response_size_bytes = len(gpt0_completion_utf8)
 
     settings.remaining_bandwidth_bytes -= response_size_bytes
+    
+    # TODO: A more serious attempt to have a secure rate limiter would deal with information leaking through timing, error messages, etc.
+    
     if settings.remaining_bandwidth_bytes < 0:
         raise HTTPException(status_code=429, detail="Bandwidth limit exceeded")
     
