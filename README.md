@@ -37,6 +37,33 @@ poetry install
 poetry run python test_gpt.py
 ```
 
+#### Example output (this might not be up to date)
+
+```text
+Starting servers...
+GPT0 server configured with 0.01s response delay
+GPT0 server running at http://localhost:60922
+Limited server running at http://localhost:60923
+
+Running basic tests...
+/gpt0 response: "hello world"
+/limited-gpt0 response: "hello world"
+
+Running performance tests...
+/gpt0 took 1.6186s for 100 requests
+/limited-gpt0 took 1.8218s for 100 requests
+Restarting limited server...
+
+Running bandwidth limit test...
+
+Testing bandwidth limit...
+Bandwidth limit hit after 77 requests
+Bandwidth limit test passed!
+
+Cleaning up servers...
+Servers cleaned up
+```
+
 ## Limitations
 
 - TLDR: This is extremely simplified in many ways.
