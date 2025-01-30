@@ -13,9 +13,17 @@ The project consists of two main components:
 2. **Limited Proxy** (`/limited-gpt0` endpoint)
    - Acts as a proxy to the GPT0 server
    - Tracks cumulative bandwidth usage
-   - Returns 429 (Too Many Requests) when bandwidth limit is exceeded
+   - Returns an error when bandwidth limit is exceeded
 
 ## Installation
+
+### Install poetry (and everything it depends on)
+
+See the [official docs](https://python-poetry.org/docs/#installation)
+
+### Python
+
+If you're missing a python version, I recommend installing it with [pyenv](https://github.com/pyenv/pyenv).
 
 ### Install poetry dependencies
 
