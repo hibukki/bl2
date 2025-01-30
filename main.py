@@ -1,73 +1,25 @@
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI
 import uvicorn
 import argparse
-import requests
-import time
+from routers import gpt0, gpt0limited
 
-app = FastAPI()
-ALLOWED_BANDWIDTH_BYTES = 1000  # Default bandwidth limit in bytes
-gpt0_url = None
-gpt0_response_delay = 0
-
-@app.get("/gpt0")
-def gpt0():
-    if gpt0_response_delay > 0:
-        time.sleep(gpt0_response_delay)
-    return "hello world"
-
-@app.get("/limited-gpt0")
-def limited_gpt0():
-    global ALLOWED_BANDWIDTH_BYTES
-    
-    # Get response from gpt0 endpoint
-    response = requests.get(f"{gpt0_url}/gpt0")
-    response.raise_for_status()
-    stub_response = response.text
-
-    response_size_bytes = len(stub_response.encode('utf-8'))
-    if ALLOWED_BANDWIDTH_BYTES - response_size_bytes < 0:
-        raise HTTPException(status_code=429, detail="Bandwidth limit exceeded")
-
-    ALLOWED_BANDWIDTH_BYTES -= response_size_bytes
-    return Response(content=stub_response)
-
-def create_app(enable_gpt0: bool = True, enable_limited: bool = True, gpt0_url: str = "http://localhost:8000", 
-               bandwidth_limit_bytes: int = 1000, response_delay_seconds: float = 0):
+def create_app(enable_gpt0: bool = True, 
+               enable_limited: bool = True, 
+               gpt0_url: str = "http://localhost:8000", 
+               bandwidth_limit_bytes: int = 1000, 
+               response_delay_seconds: float = 0,
+               ):
     # Create a new FastAPI instance
     app = FastAPI()
     
     if enable_gpt0:
-        global gpt0_response_delay
-        gpt0_response_delay = response_delay_seconds
-        
-        @app.get("/gpt0")
-        def gpt0():
-            if gpt0_response_delay > 0:
-                time.sleep(gpt0_response_delay)
-            return "hello world"
+        app.include_router(gpt0.configure_router(response_delay_seconds=response_delay_seconds))
     
     if enable_limited:
-        global ALLOWED_BANDWIDTH_BYTES
-        ALLOWED_BANDWIDTH_BYTES = bandwidth_limit_bytes
-        
-        @app.get("/limited-gpt0")
-        def limited_gpt0():
-            global ALLOWED_BANDWIDTH_BYTES
-            
-            # Get the actual data from gpt0 endpoint
-            try:
-                response = requests.get(f"{gpt0_url}/gpt0")
-                response.raise_for_status()
-                stub_response = response.text
-            except requests.RequestException as e:
-                raise HTTPException(status_code=503, detail=f"Failed to fetch from GPT0: {str(e)}")
-
-            response_size_bytes = len(stub_response.encode('utf-8'))
-            if ALLOWED_BANDWIDTH_BYTES - response_size_bytes < 0:
-                raise HTTPException(status_code=429, detail="Bandwidth limit exceeded")
-
-            ALLOWED_BANDWIDTH_BYTES -= response_size_bytes
-            return Response(content=stub_response)
+        app.include_router(gpt0limited.configure_router(
+            bandwidth_limit_bytes=bandwidth_limit_bytes,
+            base_url=gpt0_url
+        ))
     
     return app
 
